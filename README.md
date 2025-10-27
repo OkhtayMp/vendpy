@@ -58,18 +58,6 @@ curl -L "https://raw.githubusercontent.com/okhtaymp/vendpy/main/dwl.sh" | bash
 
 ## 📦 Usage (installer: <code>vendor.sh</code>)
 
-**Run without saving (one‑liner):**
-
-```bash
-curl -L "https://raw.githubusercontent.com/okhtaymp/vendpy/main/vendor.sh" | bash
-```
-
-**Run the downloaded installer:**
-
-```bash
-bash ./vendor.sh
-```
-
 **Examples:**
 
 ```bash
@@ -86,7 +74,8 @@ bash ./vendor.sh --clear
 bash ./vendor.sh --vendor .hidden/deps --python /usr/bin/python3
 ```
 
-------------------------------- | ------------------------------------------------------------- |
+|                                 |                                                               |
+|---------------------------------|-------------------------------------------------------------- |
 | Install from `requirements.txt` | `./vendor.sh`                                                 |
 | Install specific packages       | `./vendor.sh click==8.3.0 requests`                           |
 | Clear vendor dir before install | `./vendor.sh --clear`                                         |
