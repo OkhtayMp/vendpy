@@ -26,8 +26,8 @@
     <a href="https://www.python.org/">
       <img src="https://img.shields.io/badge/python-3.7%2B-blue?style=flat-square&logo=python" alt="Python 3.7+" />
     </a>
-    <a href="https://opensource.org/licenses/MIT">
-      <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License" />
+    <a href="https://opensource.org/license/python-2-0">
+      <img src="https://img.shields.io/badge/license-PSF-green?style=flat-square" alt="PSF License" />
     </a>
   </p>
 
@@ -150,7 +150,7 @@ sha256sum vendor.sh
 | Field         | Value                                          |
 | ------------- | ---------------------------------------------- |
 | **Repo name** | `vendpy`                                       |
-| **License**   | MIT                                            |
+| **License**   | PSF-2.0                                            |
 | **Language**  | Bash / Python                                  |
 | **Tags**      | `python`, `pip`, `vendor`, `bash`, `packaging` |
 
