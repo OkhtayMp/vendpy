@@ -4,7 +4,7 @@
     <!-- Dark mode logo if available -->
     <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.png" type="image/png" />
     <!-- Default (light) logo -->
-    <img src="assets/logo.png" alt="vendpy — lightweight vendoring for Python" width="140" height="140" loading="lazy" decoding="async" style="max-width:100%;height:auto;" />
+    <img src="https://raw.githubusercontent.com/okhtaymp/vendpy/main/assets/logo.png" alt="vendpy — lightweight vendoring for Python" width="140" height="140" loading="lazy" decoding="async" style="max-width:100%;height:auto;" />
   </picture>
 
   <h1 style="margin:12px 0 6px;">vendpy</h1>
