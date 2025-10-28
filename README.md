@@ -74,12 +74,14 @@ bash ./vendor.sh --clear
 bash ./vendor.sh --vendor .hidden/deps --python /usr/bin/python3
 ```
 
-|                                 |                                                               |
-|---------------------------------|-------------------------------------------------------------- |
-| Install from `requirements.txt` | `./vendor.sh`                                                 |
-| Install specific packages       | `./vendor.sh click==8.3.0 requests`                           |
-| Clear vendor dir before install | `./vendor.sh --clear`                                         |
-| Custom vendor path / Python bin | `./vendor.sh --vendor .hidden/deps --python /usr/bin/python3` |
+|                                     | Command                                                                 |
+|-------------------------------------|-------------------------------------------------------------------------|
+| Install from `requirements.txt`     | `./vendor.sh`                                                           |
+| Install specific packages           | `./vendor.sh click==8.3.0 requests`                                     |
+| Clear vendor dir before install     | `./vendor.sh --clear`                                                   |
+| Custom vendor path / Python bin     | `./vendor.sh --vendor .hidden/deps --python /usr/bin/python3`           |
+| Upgrade/overwrite existing packages | `./vendor.sh --upgrade`                                                 |
+| Clean install + upgrade             | `./vendor.sh --clear --upgrade`                                         |
 
 ---
 
