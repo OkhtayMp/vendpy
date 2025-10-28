@@ -2,10 +2,10 @@
 # vendor.sh — install deps into ./.third_party/python and ensure __venddeps__.py exists (hidden vendor)
 # Usage:
 #   ./vendor.sh                       # safe: install only missing deps from ./requirements.txt (no overwrite)
-#   ./vendor.sh click==8.3.0          # safe: install only missing explicit packages
+#   ./vendor.sh click==8.3.0 requests # safe: install only missing explicit packages
 #   ./vendor.sh --upgrade             # allow upgrading/overwriting existing packages
 #   ./vendor.sh --clear               # remove vendor dir before install
-#   ./vendor.sh --vendor path/to/vendor --python /usr/bin/python3 pkgA==1.0
+#   ./vendor.sh --vendor .hidden/deps --python /usr/bin/python3 pkgA==1.0
 
 set -euo pipefail
 
@@ -131,7 +131,7 @@ PIP_ARGS=( --disable-pip-version-check --target "$VENDOR_DIR" )
 $UPGRADE && PIP_ARGS+=( --upgrade )
 
 # -------------------- resolve what to install --------------------
-# در حالت safe، قبل از اجرای pip بررسی می‌کنیم چه چیزهایی واقعاً لازم است نصب شوند.
+# در حالت safe، قبل از اجرای pip بررسی می‌کنیم چه چیزهایی واقعاً لازم است نصب شوند (همهٔ نسخه‌های موجود لحاظ می‌شوند).
 missing_list=()
 if ! $UPGRADE; then
   if [[ ${#PKGS[@]} -gt 0 ]]; then
@@ -141,32 +141,41 @@ import sys
 from pathlib import Path
 from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
-from packaging.version import Version
-from packaging.specifiers import SpecifierSet
+from packaging.version import Version, InvalidVersion
 import importlib.metadata as md
 
 vendor = Path(sys.argv[1])
 reqs = sys.argv[2:]
 
-# فهرست پکیج‌های نصب‌شده داخل vendor
+# collect *all* installed versions per package in vendor
 installed = {}
 for dist in md.distributions(path=[str(vendor)]):
-    installed[canonicalize_name(dist.metadata["Name"])] = dist.version
+    try:
+        name = canonicalize_name(dist.metadata["Name"])
+        ver  = Version(dist.version)
+    except Exception:
+        continue
+    installed.setdefault(name, set()).add(ver)
 
 def need(req_str: str) -> bool:
-    r = Requirement(req_str)
+    # unknown formats pass to pip
+    try:
+        r = Requirement(req_str)
+    except Exception:
+        return True
     name = canonicalize_name(r.name)
     vers = installed.get(name)
-    if vers is None:
+    if not vers:
         return True
-    # اگر قید نسخه‌ای نبود، یعنی همین که هست کفایت می‌کند
     if not r.specifier:
         return False
-    try:
-        return not Version(vers) in r.specifier
-    except Exception:
-        # محافظه‌کار: اگر نتوانستیم تفسیر کنیم، بگذار نصب کند
-        return True
+    for v in vers:
+        try:
+            if v in r.specifier:
+                return False
+        except InvalidVersion:
+            continue
+    return True
 
 for s in reqs:
     if need(s):
@@ -174,15 +183,13 @@ for s in reqs:
 PY
     )
   else
-    # از فایل requirements.txt بخوان و موارد واقعاً لازم را برگردان
     mapfile -t missing_list < <(
       "$PY_BIN" - "$VENDOR_DIR" "$REQ_FILE" <<'PY'
 import sys
 from pathlib import Path
 from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
-from packaging.version import Version
-from packaging.specifiers import SpecifierSet
+from packaging.version import Version, InvalidVersion
 import importlib.metadata as md
 
 vendor = Path(sys.argv[1])
@@ -193,29 +200,35 @@ for raw in req_file.read_text().splitlines():
     s = raw.strip()
     if not s or s.startswith("#"):
         continue
-    # فقط خطوط ساده‌ی پکیج/نسخه را قبول کن (نه -e، نه فایل/URL). بقیه را پاس بده تا pip خودش رسیدگی کند.
     lines.append(s)
 
 installed = {}
 for dist in md.distributions(path=[str(vendor)]):
-    installed[canonicalize_name(dist.metadata["Name"])] = dist.version
+    try:
+        name = canonicalize_name(dist.metadata["Name"])
+        ver  = Version(dist.version)
+    except Exception:
+        continue
+    installed.setdefault(name, set()).add(ver)
 
 def need(req_str: str) -> bool:
     try:
         r = Requirement(req_str)
     except Exception:
-        # ناشناخته: بگذار pip رسیدگی کند
         return True
     name = canonicalize_name(r.name)
     vers = installed.get(name)
-    if vers is None:
+    if not vers:
         return True
     if not r.specifier:
         return False
-    try:
-        return not Version(vers) in r.specifier
-    except Exception:
-        return True
+    for v in vers:
+        try:
+            if v in r.specifier:
+                return False
+        except InvalidVersion:
+            continue
+    return True
 
 for s in lines:
     if need(s):
@@ -243,7 +256,6 @@ else
     echo "==> Nothing to do (all requirements already satisfied in vendor)."
   else
     if ! $UPGRADE; then
-      # بساز یک فایل موقت فقط با اقلامِ لازم
       tmp_req="$(mktemp)"
       printf "%s\n" "${missing_list[@]}" > "$tmp_req"
       echo "==> Installing missing from requirements: $tmp_req"
@@ -261,7 +273,13 @@ echo "==> Installed distributions in vendor:"
 if command -v find >/dev/null 2>&1 && find "$VENDOR_DIR" -maxdepth 1 -type d -name '*.dist-info' -printf '' >/dev/null 2>&1; then
   find "$VENDOR_DIR" -maxdepth 1 -type d -name '*.dist-info' -printf '  - %f\n' | sed 's/\.dist-info$//' || true
 else
-  # در سیستم‌هایی که find با -printf ندارند (مثلاً مک)، از پایتون کمک می‌گیریم
+  "$PY_BIN" - <<'PY' || true
+import sys, pathlib
+p = pathlib.Path('.')
+# Try vendor dir from env passed by shell (fallback to current dir if not)
+# We'll just search *.dist-info one level in vendor dir.
+PY
+  # Fallback simple listing without GNU find -printf: use Python directly on the vendor path
   "$PY_BIN" - "$VENDOR_DIR" <<'PY' || true
 import sys, pathlib
 p = pathlib.Path(sys.argv[1])
